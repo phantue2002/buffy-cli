@@ -1,0 +1,9 @@
+# Binary
+buffy
+buffy.exe
+
+# Go
+*.exe
+*.test
+*.out
+go.work
