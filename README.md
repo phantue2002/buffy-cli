@@ -10,7 +10,7 @@
 
 ### Download a binary (recommended)
 
-1. Go to [Releases](https://github.com/phantue2002/buffy-agent/releases) (tags `cli/v*`) and download the build for your OS/arch, for example:
+1. Go to [Releases](https://github.com/phantue2002/buffy-cli/releases) and download the build for your OS/arch, for example:
    - **Linux (x64):** `buffy-1.0.0-linux-amd64`
    - **macOS (Apple Silicon):** `buffy-1.0.0-darwin-arm64`
    - **Windows (x64):** `buffy-1.0.0-windows-amd64.exe`
@@ -93,4 +93,4 @@ buffy --api-base https://api.example.com message --user-id u1 --api-key KEY --te
 
 ## License
 
-Same license as the [Buffy](https://github.com/phantue2002/buffy-agent) project.
+Proprietary. Buffy is a private project; all rights reserved.

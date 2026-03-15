@@ -1,0 +1,76 @@
+# Build and publish buffy when a tag v* is pushed.
+# Creates a GitHub Release with binaries for Windows, macOS, and Linux.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and release buffy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Build binaries
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          export CGO_ENABLED=0
+          LD_FLAGS="-s -w -X main.Version=${VERSION} -X main.Commit=${COMMIT}"
+          mkdir -p dist
+
+          GOOS=linux   GOARCH=amd64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-linux-amd64   .
+          GOOS=linux   GOARCH=arm64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-linux-arm64   .
+          GOOS=darwin  GOARCH=amd64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-darwin-amd64   .
+          GOOS=darwin  GOARCH=arm64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-darwin-arm64   .
+          GOOS=windows GOARCH=amd64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-windows-amd64.exe .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: buffy ${{ steps.version.outputs.version }}
+          body: |
+            ## buffy ${{ steps.version.outputs.version }}
+
+            CLI for [Buffy](https://buffyai.org). Use it to send messages, manage settings, and API keys against [api.buffyai.org](https://api.buffyai.org).
+
+            ### Install
+
+            1. Download the binary for your OS/arch below.
+            2. Rename to `buffy` (or `buffy.exe` on Windows) and add to your PATH.
+            3. Set `BUFFY_API_KEY` (from [buffyai.org](https://buffyai.org) → Account → API keys) or use `--api-key`.
+
+            ### Example
+
+            ```bash
+            buffy message --user-id YOUR_USER_ID --text "remind me to drink water every day"
+            ```
+
+            See the [README](https://github.com/${{ github.repository }}) for full usage.
+          draft: false
+          prerelease: false
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
