@@ -16,6 +16,7 @@ import (
 )
 
 const defaultAPIBase = "https://api.buffyai.org"
+const defaultHTTPTimeout = 10 * time.Second
 
 // Set by ldflags when building for release, e.g.:
 //
@@ -27,12 +28,18 @@ type cliConfig struct {
 	apiBase string
 	apiKey  string
 	asUser  string
+	client  *http.Client
+}
+
+func newHTTPClient() *http.Client {
+	return &http.Client{Timeout: defaultHTTPTimeout}
 }
 
 func main() {
 	cfg := cliConfig{
 		apiBase: envOr("BUFFY_API_BASE", defaultAPIBase),
 		apiKey:  envOr("BUFFY_API_KEY", ""),
+		client:  newHTTPClient(),
 	}
 
 	rootCmd := &cobra.Command{
@@ -67,21 +74,20 @@ func newMessageCmd(cfg *cliConfig) *cobra.Command {
 			if cfg.apiKey == "" {
 				return fmt.Errorf("BUFFY_API_KEY or --api-key is required")
 			}
-			if userID == "" || text == "" {
-				return fmt.Errorf("--user-id and --text are required")
+			if text == "" {
+				return fmt.Errorf("--text is required")
 			}
 			if platform == "" {
 				platform = "cli"
 			}
 
-			client := &http.Client{Timeout: 10 * time.Second}
 			payload := core.UnifiedMessage{
-				UserID:   userID,
+				UserID:   userID, // optional: backend uses authenticated user from API key when empty
 				Platform: platform,
 				Message:  text,
 			}
 
-			reply, err := callMessageEndpoint(cmd.Context(), client, cfg, payload)
+			reply, err := callMessageEndpoint(cmd.Context(), cfg.client, cfg, payload)
 			if err != nil {
 				return err
 			}
@@ -92,8 +98,10 @@ func newMessageCmd(cfg *cliConfig) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&platform, "platform", "cli", "Platform name (e.g. clawbot, chatgpt)")
-	cmd.Flags().StringVar(&userID, "user-id", "", "User ID")
+	cmd.Flags().StringVar(&userID, "user-id", "", "User ID (optional; defaults to the user of the API key)")
 	cmd.Flags().StringVar(&text, "text", "", "Message text")
+	cmd.Example = `  buffy message --text "remind me to drink water every day"
+  buffy message --api-key KEY --text "list my activities"`
 
 	return cmd
 }
@@ -134,8 +142,7 @@ func newUserSettingsGetCmd(cfg *cliConfig) *cobra.Command {
 				req.Header.Set("X-Buffy-User-ID", cfg.asUser)
 			}
 
-			client := &http.Client{Timeout: 5 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := cfg.client.Do(req)
 			if err != nil {
 				return err
 			}
@@ -201,8 +208,7 @@ func newUserSettingsSetCmd(cfg *cliConfig) *cobra.Command {
 				req.Header.Set("X-Buffy-User-ID", cfg.asUser)
 			}
 
-			client := &http.Client{Timeout: 5 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := cfg.client.Do(req)
 			if err != nil {
 				return err
 			}
@@ -265,8 +271,7 @@ func newApiKeyListCmd(cfg *cliConfig) *cobra.Command {
 				req.Header.Set("X-Buffy-User-ID", cfg.asUser)
 			}
 
-			client := &http.Client{Timeout: 5 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := cfg.client.Do(req)
 			if err != nil {
 				return err
 			}
@@ -339,8 +344,7 @@ func newApiKeyCreateCmd(cfg *cliConfig) *cobra.Command {
 				req.Header.Set("X-Buffy-User-ID", cfg.asUser)
 			}
 
-			client := &http.Client{Timeout: 5 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := cfg.client.Do(req)
 			if err != nil {
 				return err
 			}
@@ -396,8 +400,7 @@ func newApiKeyRevokeCmd(cfg *cliConfig) *cobra.Command {
 				req.Header.Set("X-Buffy-User-ID", cfg.asUser)
 			}
 
-			client := &http.Client{Timeout: 5 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := cfg.client.Do(req)
 			if err != nil {
 				return err
 			}

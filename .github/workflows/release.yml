@@ -65,7 +65,7 @@ jobs:
             ### Example
 
             ```bash
-            buffy message --user-id YOUR_USER_ID --text "remind me to drink water every day"
+            buffy message --text "remind me to drink water every day"
             ```
 
             See the [README](https://github.com/${{ github.repository }}) for full usage.

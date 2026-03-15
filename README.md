@@ -45,7 +45,7 @@ You need a Buffy API key (Bearer token) to call the API.
 
 ```bash
 export BUFFY_API_KEY=your_existing_key
-buffy api-key create --user-id YOUR_USER_ID --label my-cli
+buffy api-key create --label my-cli
 ```
 
 Then set `BUFFY_API_KEY` to the new key, or pass `--api-key KEY` on each command.
@@ -57,11 +57,11 @@ Then set `BUFFY_API_KEY` to the new key, or pass `--api-key KEY` on each command
 | Command | Description |
 |--------|-------------|
 | `buffy version` | Show version |
-| `buffy message --user-id ID --text "..."` | Send a message to the agent |
+| `buffy message --text "..."` | Send a message (user = API key owner; optional `--user-id` for system keys) |
 | `buffy user-settings get --user-id ID` | Get user settings (JSON) |
 | `buffy user-settings set --user-id ID [--name ...] [--timezone ...]` | Update settings |
 | `buffy api-key list --user-id ID` | List API keys (ID, label, type) |
-| `buffy api-key create --user-id ID [--label ...] [--type user\|system]` | Create API key |
+| `buffy api-key create [--label ...] [--type user\|system]` | Create API key (user = key owner; `--user-id` only for system keys) |
 | `buffy api-key revoke --id KEY_ID` | Revoke key by ID (from list) |
 
 **Global flags:** `--api-base URL`, `--api-key KEY`, `--as-user USER_ID` (for system keys acting on behalf of a user).
@@ -70,11 +70,11 @@ Then set `BUFFY_API_KEY` to the new key, or pass `--api-key KEY` on each command
 
 ## Examples
 
-Send a message (e.g. create a reminder):
+Send a message (e.g. create a reminder). With a user API key, no need to pass `--user-id`:
 
 ```bash
 export BUFFY_API_KEY=your_key
-buffy message --user-id YOUR_USER_ID --text "remind me to drink water every day"
+buffy message --text "remind me to drink water every day"
 ```
 
 List your API keys:
@@ -86,7 +86,7 @@ buffy api-key list --user-id YOUR_USER_ID
 Use a different API base (e.g. self‑hosted):
 
 ```bash
-buffy --api-base https://api.example.com message --user-id u1 --api-key KEY --text "hello"
+buffy --api-base https://api.example.com message --api-key KEY --text "hello"
 ```
 
 ---
