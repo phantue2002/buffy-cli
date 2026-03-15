@@ -37,15 +37,25 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           COMMIT: ${{ github.sha }}
         run: |
+          set -e
           export CGO_ENABLED=0
           LD_FLAGS="-s -w -X main.Version=${VERSION} -X main.Commit=${COMMIT}"
           mkdir -p dist
 
+          go version
           GOOS=linux   GOARCH=amd64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-linux-amd64   .
           GOOS=linux   GOARCH=arm64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-linux-arm64   .
           GOOS=darwin  GOARCH=amd64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-darwin-amd64   .
           GOOS=darwin  GOARCH=arm64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-darwin-arm64   .
           GOOS=windows GOARCH=amd64 go build -ldflags "$LD_FLAGS" -o dist/buffy-${VERSION}-windows-amd64.exe .
+
+      - name: Verify artifacts
+        run: |
+          ls -la dist/
+          if [ -z "$(ls -A dist 2>/dev/null)" ]; then
+            echo "error: no build artifacts in dist/"
+            exit 1
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
